@@ -31,7 +31,25 @@ func NewGame() *Game {
 	g.paths = imagefs.AllJpgFiles(g.root)
 	return g
 }
+func setImage(g *Game, i int) (err error) {
 
+	// Try to load the image before creating the viewport
+	g.name = g.paths[i]
+	g.image, err = img.Load(g.root + "/" + g.name)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	// Initialize modules (no need to display an error message if a module initialization fails because the module already did)
+	if err = viewport.Initialize(g.title, g.image); err != nil {
+		log.Fatal(err)
+		return err
+	} // TODO set initial viewport size and window decorations according to parameters saved on previous program exit ?
+	g.image.Free()
+
+	return
+}
 func run(g *Game) (err error) {
 
 	var Frame_Starting_Time = uint32(0)
@@ -40,6 +58,7 @@ func run(g *Game) (err error) {
 	var Mouse_Y int32
 	var Zoom_Factor = int32(1)
 	Flipping_Mode := viewport.TViewportFlippingModeID(viewport.FLIPPING_MODE_ID_NORMAL)
+	var Index = 0
 
 	// Initialize SDL before everything else, so other SDL libraries can be safely initialized
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
@@ -55,22 +74,7 @@ func run(g *Game) (err error) {
 	}
 	defer img.Quit()
 
-	// Try to load the image before creating the viewport
-	g.name = g.paths[1]
-	g.image, err = img.Load(g.root + "/" + g.name)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	// Initialize modules (no need to display an error message if a module initialization fails because the module already did)
-	if err = viewport.Initialize(g.title, g.image); err != nil {
-		log.Fatal(err)
-		return err
-	} // TODO set initial viewport size and window decorations according to parameters saved on previous program exit ?
-
-	viewport.DrawImage()
-	g.image.Free()
+	setImage(g, Index)
 
 	// Process incoming SDL events
 	running := true
@@ -121,6 +125,9 @@ func run(g *Game) (err error) {
 
 						// Zoom has been reset when flipping the image
 						Zoom_Factor = 1
+					case sdl.K_ESCAPE:
+						fmt.Println("Application quit...")
+						running = false
 					case sdl.K_q:
 						fmt.Println("Application quit...")
 						running = false
@@ -129,6 +136,12 @@ func run(g *Game) (err error) {
 						viewport.ScaleImage()
 						// Reset zoom
 						Zoom_Factor = 1
+					case sdl.K_SPACE:
+						Index++
+						if Index == len(g.paths) {
+							Index = 0
+						}
+						setImage(g, Index)
 					}
 				}
 			case *sdl.MouseMotionEvent:
@@ -147,7 +160,6 @@ func run(g *Game) (err error) {
 				//fmt.Printf("[%d ms] Unknown\ttype:%d\n", t.GetTimestamp(), t.GetType())
 			}
 		}
-		//fmt.Println("Drawing image")
 		viewport.DrawImage()
 
 		// Wait enough time to get a 60Hz refresh rate

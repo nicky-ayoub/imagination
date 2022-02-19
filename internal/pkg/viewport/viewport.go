@@ -87,8 +87,9 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 	var Vertical_Scaling_Percentage int32
 	var Rectangle_Original_Image_Dimensions sdl.Rect
 
-	fmt.Println("AdaptImage(", Image_Width, ", ", Image_Height, ")")
-	fmt.Printf("Viewport(%d, %d)\n", Viewport_Width, Viewport_Height)
+	//fmt.Println("AdaptImage(", Image_Width, ", ", Image_Height, ")")
+	//fmt.Printf("Viewport(%d, %d)\n", Viewport_Width, Viewport_Height)
+
 	// Adjust image size to viewport ratio to make sure the image will keep its ratio
 	// Image is smaller than the viewport, keep viewport size
 	if (Image_Width < Viewport_Width) && (Image_Height < Viewport_Height) {
@@ -222,7 +223,7 @@ func SetDimensions(New_Viewport_Width int32, New_Viewport_Height int32) {
 var SetZoomedArea func(int32, int32, int32)
 
 func init() {
-	fmt.Println("Creating SetZoomedArea function...")
+	//fmt.Println("Creating SetZoomedArea function...")
 	SetZoomedArea = MakeSetZoomedArea()
 }
 
@@ -269,17 +270,6 @@ func MakeSetZoomedArea() func(int32, int32, int32) {
 		// The smaller the rectangle is, the more the image will be zoomed
 		Viewport_Rectangle_View.W = (Viewport_Adjusted_Image_Width / Zoom_Factor) - 1
 		Viewport_Rectangle_View.H = (Viewport_Adjusted_Image_Height / Zoom_Factor) - 1
-
-		fmt.Println("============================")
-		if Previous_Zoom_Level_Rectangle_X != Rectangle_X {
-			fmt.Println("New Zoom_Level_Rectangle_X ", Rectangle_X)
-		}
-		if Previous_Zoom_Level_Rectangle_Y != Rectangle_X {
-			fmt.Println("New Zoom_Level_Rectangle_Y ", Rectangle_Y)
-		}
-		if Previous_Zoom_Factor != Zoom_Factor {
-			fmt.Println("New Zoom_Factor ", Zoom_Factor)
-		}
 
 		Previous_Zoom_Level_Rectangle_X = Rectangle_X
 		Previous_Zoom_Level_Rectangle_Y = Rectangle_Y
