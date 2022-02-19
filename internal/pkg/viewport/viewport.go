@@ -49,8 +49,6 @@ type viewport struct {
 var vp viewport
 
 var window *sdl.Window
-
-/** The renderer able to display to the window. */
 var renderer *sdl.Renderer
 
 /** The texture holding the loaded image. */
@@ -204,62 +202,60 @@ func SetDimensions(new_width int32, new_height int32) {
 	AdaptImage(vp.original_width, vp.original_height)
 }
 
-var SetZoomedArea func(int32, int32, int32)
+//var SetZoomedArea func(int32, int32, int32)
 
 func init() {
 	vp.flip_mode = sdl.FLIP_NONE
 	//fmt.Println("Creating SetZoomedArea function...")
-	SetZoomedArea = MakeSetZoomedArea()
+	// SetZoomedArea = MakeSetZoomedArea()
 }
 
-func MakeSetZoomedArea() func(int32, int32, int32) {
-	var Previous_Zoom_Level_Rectangle_X = int32(0)
-	var Previous_Zoom_Level_Rectangle_Y = int32(0)
-	var Previous_Zoom_Factor = int32(1)
+var Previous_Zoom_Level_Rectangle_X = int32(0)
+var Previous_Zoom_Level_Rectangle_Y = int32(0)
+var Previous_Zoom_Factor = int32(1)
 
-	return func(Viewport_X int32, Viewport_Y int32, Zoom_Factor int32) {
-		var Rectangle_X = int32(0)
-		var Rectangle_Y = int32(0)
+func SetZoomedArea(Viewport_X int32, Viewport_Y int32, Zoom_Factor int32) {
+	var Rectangle_X = int32(0)
+	var Rectangle_Y = int32(0)
 
-		// Do not compute viewing area once more if the maximum zooming level has been reached, because values would overflow
-		if (Previous_Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
-			return
-		}
-
-		// Force the view rectangle to start from the viewport origin when there is no zooming
-		if Zoom_Factor == 1 {
-			Rectangle_X = 0
-			Rectangle_Y = 0
-		} else if Previous_Zoom_Factor < Zoom_Factor {
-			// Handle zooming in by adding to the preceding view rectangle origin the new mouse moves (scaled according to the new zoom factor)
-			Rectangle_X = Previous_Zoom_Level_Rectangle_X + (((Viewport_X / Zoom_Factor) * vp.adjusted_width) / vp.width)
-			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y + (((Viewport_Y / Zoom_Factor) * vp.adjusted_height) / vp.height)
-		} else if Previous_Zoom_Factor > Zoom_Factor {
-			// Handle zooming out by subtracting to the preceding view rectangle origin the new mouse moves (scaled according to the previous zoom factor, which was greater than the current one and was the factor used to compute the zooming in)
-			Rectangle_X = Previous_Zoom_Level_Rectangle_X - (((Viewport_X / Previous_Zoom_Factor) * vp.adjusted_width) / vp.width)
-			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y - (((Viewport_Y / Previous_Zoom_Factor) * vp.adjusted_height) / vp.height)
-		}
-
-		// Make sure no negative coordinates are generated
-		if Rectangle_X < 0 {
-			Rectangle_X = 0
-		}
-		if Rectangle_Y < 0 {
-			Rectangle_Y = 0
-		}
-
-		// There is nothing to do when zooming to 1x because the for loop will immediately exit and x and y coordinates will be set to 0
-		vp.srcRect.X = Rectangle_X
-		vp.srcRect.Y = Rectangle_Y
-
-		// The smaller the rectangle is, the more the image will be zoomed
-		vp.srcRect.W = (vp.adjusted_width / Zoom_Factor) - 1
-		vp.srcRect.H = (vp.adjusted_height / Zoom_Factor) - 1
-
-		Previous_Zoom_Level_Rectangle_X = Rectangle_X
-		Previous_Zoom_Level_Rectangle_Y = Rectangle_Y
-		Previous_Zoom_Factor = Zoom_Factor
+	// Do not compute viewing area once more if the maximum zooming level has been reached, because values would overflow
+	if (Previous_Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
+		return
 	}
+
+	// Force the view rectangle to start from the viewport origin when there is no zooming
+	if Zoom_Factor == 1 {
+		Rectangle_X = 0
+		Rectangle_Y = 0
+	} else if Previous_Zoom_Factor < Zoom_Factor {
+		// Handle zooming in by adding to the preceding view rectangle origin the new mouse moves (scaled according to the new zoom factor)
+		Rectangle_X = Previous_Zoom_Level_Rectangle_X + (((Viewport_X / Zoom_Factor) * vp.adjusted_width) / vp.width)
+		Rectangle_Y = Previous_Zoom_Level_Rectangle_Y + (((Viewport_Y / Zoom_Factor) * vp.adjusted_height) / vp.height)
+	} else if Previous_Zoom_Factor > Zoom_Factor {
+		// Handle zooming out by subtracting to the preceding view rectangle origin the new mouse moves (scaled according to the previous zoom factor, which was greater than the current one and was the factor used to compute the zooming in)
+		Rectangle_X = Previous_Zoom_Level_Rectangle_X - (((Viewport_X / Previous_Zoom_Factor) * vp.adjusted_width) / vp.width)
+		Rectangle_Y = Previous_Zoom_Level_Rectangle_Y - (((Viewport_Y / Previous_Zoom_Factor) * vp.adjusted_height) / vp.height)
+	}
+
+	// Make sure no negative coordinates are generated
+	if Rectangle_X < 0 {
+		Rectangle_X = 0
+	}
+	if Rectangle_Y < 0 {
+		Rectangle_Y = 0
+	}
+
+	// There is nothing to do when zooming to 1x because the for loop will immediately exit and x and y coordinates will be set to 0
+	vp.srcRect.X = Rectangle_X
+	vp.srcRect.Y = Rectangle_Y
+
+	// The smaller the rectangle is, the more the image will be zoomed
+	vp.srcRect.W = (vp.adjusted_width / Zoom_Factor) - 1
+	vp.srcRect.H = (vp.adjusted_height / Zoom_Factor) - 1
+
+	Previous_Zoom_Level_Rectangle_X = Rectangle_X
+	Previous_Zoom_Level_Rectangle_Y = Rectangle_Y
+	Previous_Zoom_Factor = Zoom_Factor
 }
 
 func SetFlippingMode(mode TViewportFlippingModeID) {
