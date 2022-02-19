@@ -42,7 +42,7 @@ func setImage(g *Game, i int) (err error) {
 	}
 
 	// Initialize modules (no need to display an error message if a module initialization fails because the module already did)
-	if err = viewport.Initialize(g.title, g.image); err != nil {
+	if err = viewport.Initialize(g.title+g.name, g.image); err != nil {
 		log.Fatal(err)
 		return err
 	} // TODO set initial viewport size and window decorations according to parameters saved on previous program exit ?
@@ -136,10 +136,18 @@ func run(g *Game) (err error) {
 						viewport.ScaleImage()
 						// Reset zoom
 						Zoom_Factor = 1
+					case sdl.K_RIGHT:
+						fallthrough
 					case sdl.K_SPACE:
 						Index++
 						if Index == len(g.paths) {
 							Index = 0
+						}
+						setImage(g, Index)
+					case sdl.K_LEFT:
+						Index--
+						if Index < 0 {
+							Index = len(g.paths) - 1
 						}
 						setImage(g, Index)
 					}
