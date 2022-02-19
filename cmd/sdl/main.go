@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/nicky-ayoub/imagination/internal/pkg/imagefs"
-	"github.com/nicky-ayoub/imagination/internal/pkg/viewport"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -120,9 +119,6 @@ func run(g *Game) (err error) {
 func main() {
 	g := NewGame()
 	fmt.Println(g)
-	if err := viewport.ViewportInitialize("Viewport", g.image); err != nil {
-		os.Exit(1)
-	}
 	if err := run(g); err != nil {
 		os.Exit(1)
 	}
