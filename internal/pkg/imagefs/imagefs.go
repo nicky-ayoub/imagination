@@ -30,7 +30,7 @@ func CountAllGoFiles(folder string) (count int) {
 }
 
 func CountAllJpgFiles(folder string) (count int) {
-	return CountAllFilesByExt(folder, ".jpg")
+	return CountAllFilesByExt(folder, ".jpg") + CountAllFilesByExt(folder, ".jpeg")
 }
 
 func CountAllFilesByExt(folder string, ext string) (count int) {
@@ -46,19 +46,22 @@ func CountAllFilesByExt(folder string, ext string) (count int) {
 }
 
 func AllJpgFiles(folder string) (files []string) {
-	return AllFilesByExt(folder, ".jpg")
+	return AllFilesByExt(folder, []string{".jpg", ".jpeg"})
 }
 
 func AllGoFiles(folder string) (files []string) {
-	return AllFilesByExt(folder, ".go")
+	return AllFilesByExt(folder, []string{".go"})
 }
 
-func AllFilesByExt(folder string, ext string) (files []string) {
-
+func AllFilesByExt(folder string, exts []string) (files []string) {
+	valid := make(map[string]bool)
+	for _, s := range exts {
+		valid[s] = true
+	}
 	fsys := os.DirFS(folder)
 	fmt.Println("Scanning  all in folder " + folder)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ext {
+		if valid[filepath.Ext(p)] {
 			files = append(files, p)
 		}
 		return nil

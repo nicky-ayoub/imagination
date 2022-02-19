@@ -1,7 +1,6 @@
 package viewport
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -40,26 +39,17 @@ var window *sdl.Window
 /** The renderer able to display to the window. */
 var renderer *sdl.Renderer
 
-/** Viewport width in pixels. */
-var Viewport_Width int32
+type viewport struct {
+	width                       int32
+	height                      int32
+	original_image_width        int32
+	original_image_height       int32
+	original_image_pixel_format uint32
+	adjusted_image_width        int32
+	adjusted_image_height       int32
+}
 
-/** Viewport height in pixels. */
-var Viewport_Height int32
-
-/** Cache the loaded image width in pixels. */
-var Viewport_Original_Image_Width int32
-
-/** Cache the loaded image height in pixels. */
-var Viewport_Original_Image_Height int32
-
-/** Cache the loaded image pixel format. */
-var Viewport_Original_Image_Pixel_Format uint32
-
-/** Adjusted image width in pixels. */
-var Viewport_Adjusted_Image_Width int32
-
-/** Adjusted image height in pixels. */
-var Viewport_Adjusted_Image_Height int32
+var vp viewport
 
 /** The texture holding the loaded image. */
 var texture *sdl.Texture = nil
@@ -88,25 +78,25 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 	var Rectangle_Original_Image_Dimensions sdl.Rect
 
 	//fmt.Println("AdaptImage(", Image_Width, ", ", Image_Height, ")")
-	//fmt.Printf("Viewport(%d, %d)\n", Viewport_Width, Viewport_Height)
+	//fmt.Printf("Viewport(%d, %d)\n", vp.width, vp.height)
 
 	// Adjust image size to viewport ratio to make sure the image will keep its ratio
 	// Image is smaller than the viewport, keep viewport size
-	if (Image_Width < Viewport_Width) && (Image_Height < Viewport_Height) {
-		Viewport_Adjusted_Image_Width = Viewport_Width
-		Viewport_Adjusted_Image_Height = Viewport_Height
+	if (Image_Width < vp.width) && (Image_Height < vp.height) {
+		vp.adjusted_image_width = vp.width
+		vp.adjusted_image_height = vp.height
 	} else { // Image is bigger than the viewport, make sure it will fit in the current viewport
 		// Determine which size (horizontal or vertical) must be filled to keep the ratio (all computations are made with percentages to be easier to understand, and also because multiplying by 100 allows simple and fast fixed calculations with accurate enough results)
-		Horizontal_Scaling_Percentage = (100 * Image_Width) / Viewport_Width // Find how much the image is larger than the viewport
-		Vertical_Scaling_Percentage = (100 * Image_Height) / Viewport_Height // Find how much the image is higher than the viewport
+		Horizontal_Scaling_Percentage = (100 * Image_Width) / vp.width // Find how much the image is larger than the viewport
+		Vertical_Scaling_Percentage = (100 * Image_Height) / vp.height // Find how much the image is higher than the viewport
 
 		// Horizontal size is more "compressed" than vertical one for this viewport, so display the full image horizontal size and adjust vertical size to keep ratio
 		if Horizontal_Scaling_Percentage > Vertical_Scaling_Percentage {
-			Viewport_Adjusted_Image_Width = Image_Width                                              // Keep the width
-			Viewport_Adjusted_Image_Height = (Viewport_Height * Horizontal_Scaling_Percentage) / 100 // Fill the image bottom to keep the ratio
+			vp.adjusted_image_width = Image_Width                                        // Keep the width
+			vp.adjusted_image_height = (vp.height * Horizontal_Scaling_Percentage) / 100 // Fill the image bottom to keep the ratio
 		} else { // Vertical size is more "compressed" than horizontal one for this viewport, so display the full image vertical size and adjust horizontal size to keep ratio
-			Viewport_Adjusted_Image_Height = Image_Height                                        // Keep the height
-			Viewport_Adjusted_Image_Width = (Viewport_Width * Vertical_Scaling_Percentage) / 100 // Fill the image right to keep the ratio
+			vp.adjusted_image_height = Image_Height                                  // Keep the height
+			vp.adjusted_image_width = (vp.width * Vertical_Scaling_Percentage) / 100 // Fill the image right to keep the ratio
 		}
 	}
 
@@ -116,7 +106,7 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 	}
 
 	// Create a texture with the right dimensions to keep the image ratio
-	adapted_texture, err = renderer.CreateTexture(Viewport_Original_Image_Pixel_Format, sdl.TEXTUREACCESS_TARGET, Viewport_Adjusted_Image_Width, Viewport_Adjusted_Image_Height)
+	adapted_texture, err = renderer.CreateTexture(vp.original_image_pixel_format, sdl.TEXTUREACCESS_TARGET, vp.adjusted_image_width, vp.adjusted_image_height)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -129,7 +119,7 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 		return err
 	}
 	// Set a black background color
-	if err = renderer.SetDrawColor(0, 0, 0, 0); err != nil {
+	if err = renderer.SetDrawColor(192, 192, 192, 0); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -145,15 +135,13 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 	Rectangle_Original_Image_Dimensions.W = Image_Width - 1
 	Rectangle_Original_Image_Dimensions.H = Image_Height - 1
 
-	err = renderer.CopyEx(texture, nil, &Rectangle_Original_Image_Dimensions, 0, nil, Viewport_Adapted_Image_Flipping_Mode)
-	if err != nil {
+	if err = renderer.CopyEx(texture, nil, &Rectangle_Original_Image_Dimensions, 0, nil, Viewport_Adapted_Image_Flipping_Mode); err != nil {
 		log.Fatal(err)
 		return err
 	}
 
 	// Restore the renderer (it can write to the display again)
-	err = renderer.SetRenderTarget(nil)
-	if err != nil {
+	if err = renderer.SetRenderTarget(nil); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -169,22 +157,26 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 //-------------------------------------------------------------------------------------------------
 func Initialize(title string, image *sdl.Surface) (err error) {
 	// Try to create the viewport window
-	window, err = sdl.CreateWindow(title, 0, 0, 640, 480, sdl.WINDOW_RESIZABLE|sdl.WINDOW_MAXIMIZED)
-	if err != nil {
-		log.Fatal(err)
-		return err
+	if window == nil {
+		if window, err = sdl.CreateWindow("-", 0, 0, 640, 480, sdl.WINDOW_RESIZABLE|sdl.WINDOW_MAXIMIZED); err != nil {
+			log.Fatal(err)
+			return err
+		}
 	}
+	window.SetTitle(title)
 
 	// Try to create an hardware-accelerated renderer to plug to the window
-	renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
-	if err != nil {
-		log.Fatal(err)
-		return err
+	if renderer == nil {
+		if renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC); err != nil {
+			log.Fatal(err)
+			return err
+		}
 	}
-
+	if texture != nil {
+		texture.Destroy()
+	}
 	// Convert the image surface to a texture
-	texture, err = renderer.CreateTextureFromSurface(image)
-	if err != nil {
+	if texture, err = renderer.CreateTextureFromSurface(image); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -193,12 +185,11 @@ func Initialize(title string, image *sdl.Surface) (err error) {
 	window.SetMinimumSize(VIEWPORT_MINIMUM_WINDOW_WIDTH, VIEWPORT_MINIMUM_WINDOW_HEIGHT)
 
 	// Cache original image dimensions
-	Viewport_Original_Image_Pixel_Format, _, Viewport_Original_Image_Width, Viewport_Original_Image_Height, err = texture.Query()
-	if err != nil {
+	if vp.original_image_pixel_format, _, vp.original_image_width, vp.original_image_height, err = texture.Query(); err != nil {
 		log.Fatal(err)
 		return err
 	}
-	fmt.Printf("Initialize():  Image W=%d, H=%d\n", Viewport_Original_Image_Width, Viewport_Original_Image_Height)
+	//fmt.Printf("Initialize():  Image W=%d, H=%d\n", vp.original_image_width, vp.original_image_height)
 
 	return nil
 }
@@ -210,11 +201,11 @@ func DrawImage() {
 
 func SetDimensions(New_Viewport_Width int32, New_Viewport_Height int32) {
 	// Store new viewport dimensions
-	Viewport_Width = New_Viewport_Width
-	Viewport_Height = New_Viewport_Height
+	vp.width = New_Viewport_Width
+	vp.height = New_Viewport_Height
 
 	// Add additional borders to the image to keep its ratio
-	AdaptImage(Viewport_Original_Image_Width, Viewport_Original_Image_Height)
+	AdaptImage(vp.original_image_width, vp.original_image_height)
 }
 
 var SetZoomedArea func(int32, int32, int32)
@@ -244,12 +235,12 @@ func MakeSetZoomedArea() func(int32, int32, int32) {
 			Rectangle_Y = 0
 		} else if Previous_Zoom_Factor < Zoom_Factor {
 			// Handle zooming in by adding to the preceding view rectangle origin the new mouse moves (scaled according to the new zoom factor)
-			Rectangle_X = Previous_Zoom_Level_Rectangle_X + (((Viewport_X / Zoom_Factor) * Viewport_Adjusted_Image_Width) / Viewport_Width)
-			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y + (((Viewport_Y / Zoom_Factor) * Viewport_Adjusted_Image_Height) / Viewport_Height)
+			Rectangle_X = Previous_Zoom_Level_Rectangle_X + (((Viewport_X / Zoom_Factor) * vp.adjusted_image_width) / vp.width)
+			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y + (((Viewport_Y / Zoom_Factor) * vp.adjusted_image_height) / vp.height)
 		} else if Previous_Zoom_Factor > Zoom_Factor {
 			// Handle zooming out by subtracting to the preceding view rectangle origin the new mouse moves (scaled according to the previous zoom factor, which was greater than the current one and was the factor used to compute the zooming in)
-			Rectangle_X = Previous_Zoom_Level_Rectangle_X - (((Viewport_X / Previous_Zoom_Factor) * Viewport_Adjusted_Image_Width) / Viewport_Width)
-			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y - (((Viewport_Y / Previous_Zoom_Factor) * Viewport_Adjusted_Image_Height) / Viewport_Height)
+			Rectangle_X = Previous_Zoom_Level_Rectangle_X - (((Viewport_X / Previous_Zoom_Factor) * vp.adjusted_image_width) / vp.width)
+			Rectangle_Y = Previous_Zoom_Level_Rectangle_Y - (((Viewport_Y / Previous_Zoom_Factor) * vp.adjusted_image_height) / vp.height)
 		}
 
 		// Make sure no negative coordinates are generated
@@ -265,8 +256,8 @@ func MakeSetZoomedArea() func(int32, int32, int32) {
 		Viewport_Rectangle_View.Y = Rectangle_Y
 
 		// The smaller the rectangle is, the more the image will be zoomed
-		Viewport_Rectangle_View.W = (Viewport_Adjusted_Image_Width / Zoom_Factor) - 1
-		Viewport_Rectangle_View.H = (Viewport_Adjusted_Image_Height / Zoom_Factor) - 1
+		Viewport_Rectangle_View.W = (vp.adjusted_image_width / Zoom_Factor) - 1
+		Viewport_Rectangle_View.H = (vp.adjusted_image_height / Zoom_Factor) - 1
 
 		Previous_Zoom_Level_Rectangle_X = Rectangle_X
 		Previous_Zoom_Level_Rectangle_Y = Rectangle_Y
@@ -291,7 +282,7 @@ func SetFlippingMode(Flipping_Mode_ID TViewportFlippingModeID) {
 	}
 
 	// Redraw the image with the newly selected flipping mode
-	AdaptImage(Viewport_Original_Image_Width, Viewport_Original_Image_Height)
+	AdaptImage(vp.original_image_width, vp.original_image_height)
 }
 
 func ScaleImage() {
@@ -303,24 +294,24 @@ func ScaleImage() {
 	SetZoomedArea(0, 0, 1)
 
 	// Make the image fit the viewport if it is smaller
-	if (Viewport_Original_Image_Width < Viewport_Width) && (Viewport_Original_Image_Height < Viewport_Height) {
+	if (vp.original_image_width < vp.width) && (vp.original_image_height < vp.height) {
 		// Determine the amount of pixels not used by the image and keep the smallest one to make sure the image ratio is not modified
-		Horizontally_Scaled_Pixels_Count = Viewport_Width - Viewport_Original_Image_Width
-		Vertically_Scaled_Pixels_Count = Viewport_Height - Viewport_Original_Image_Height
+		Horizontally_Scaled_Pixels_Count = vp.width - vp.original_image_width
+		Vertically_Scaled_Pixels_Count = vp.height - vp.original_image_height
 		if Horizontally_Scaled_Pixels_Count < Vertically_Scaled_Pixels_Count {
 			// Compute how many percents the image will be horizontally scaled
-			Scaling_Percentage = (100 * (Viewport_Original_Image_Width + Horizontally_Scaled_Pixels_Count)) / Viewport_Original_Image_Width
+			Scaling_Percentage = (100 * (vp.original_image_width + Horizontally_Scaled_Pixels_Count)) / vp.original_image_width
 
 			// Scale the "camera"
-			Viewport_Rectangle_View.W = Viewport_Original_Image_Width + Horizontally_Scaled_Pixels_Count
-			Viewport_Rectangle_View.H = (Viewport_Original_Image_Height * Scaling_Percentage) / 100 // Use the percentage computed right before to scale the vertical direction with the same proportion
+			Viewport_Rectangle_View.W = vp.original_image_width + Horizontally_Scaled_Pixels_Count
+			Viewport_Rectangle_View.H = (vp.original_image_height * Scaling_Percentage) / 100 // Use the percentage computed right before to scale the vertical direction with the same proportion
 		} else {
 			// Compute how many percents the image will be horizontally scaled
-			Scaling_Percentage = (100 * (Viewport_Original_Image_Height + Vertically_Scaled_Pixels_Count)) / Viewport_Original_Image_Height
+			Scaling_Percentage = (100 * (vp.original_image_height + Vertically_Scaled_Pixels_Count)) / vp.original_image_height
 
 			// Scale the "camera"
-			Viewport_Rectangle_View.W = (Viewport_Original_Image_Width * Scaling_Percentage) / 100
-			Viewport_Rectangle_View.H = Viewport_Original_Image_Height + Vertically_Scaled_Pixels_Count
+			Viewport_Rectangle_View.W = (vp.original_image_width * Scaling_Percentage) / 100
+			Viewport_Rectangle_View.H = vp.original_image_height + Vertically_Scaled_Pixels_Count
 		}
 
 		// Make sure the camera will display the whole image

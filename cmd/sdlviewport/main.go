@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -28,18 +27,15 @@ func NewGame(dir string) *Game {
 	g.title = "SDL Image Viewer - "
 	g.seed = time.Now().Unix()
 	rand.Seed(g.seed)
-	fmt.Println("Directory " + dir)
 	g.root = dir
 	g.paths = imagefs.AllJpgFiles(g.root)
-	fmt.Println("Paths ", g.paths)
 	return g
 }
 func setImage(g *Game, i int) (err error) {
 
 	// Try to load the image before creating the viewport
 	g.name = g.paths[i]
-	g.image, err = img.Load(g.root + "/" + g.name)
-	if err != nil {
+	if g.image, err = img.Load(g.root + "/" + g.name); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -70,14 +66,16 @@ func run(g *Game) (err error) {
 	defer sdl.Quit()
 
 	// Try to initialize the SDL image library
-	err = img.Init(img.INIT_JPG | img.INIT_PNG | img.INIT_TIF)
-	if err != nil {
+	if err = img.Init(img.INIT_JPG | img.INIT_PNG | img.INIT_TIF); err != nil {
 		log.Fatal(err)
 		return err
 	}
 	defer img.Quit()
 
-	setImage(g, Index)
+	if err = setImage(g, Index); err != nil {
+		log.Fatal(err)
+		return err
+	}
 
 	// Process incoming SDL events
 	running := true
@@ -95,7 +93,7 @@ func run(g *Game) (err error) {
 				// Tell the viewport that its size
 
 				if t.Event == sdl.WINDOWEVENT_SIZE_CHANGED {
-					fmt.Printf("Window size change to (%d, %d) %d %t\n", t.Data1, t.Data2, t.Event, t.Event == sdl.WINDOWEVENT_SIZE_CHANGED)
+					//fmt.Printf("Window size change to (%d, %d) %d %t\n", t.Data1, t.Data2, t.Event, t.Event == sdl.WINDOWEVENT_SIZE_CHANGED)
 					viewport.SetDimensions(t.Data1, t.Data2)
 					Zoom_Factor = 1 // Zoom has been reset when resizing the window
 				}
@@ -146,13 +144,19 @@ func run(g *Game) (err error) {
 						if Index == len(g.paths) {
 							Index = 0
 						}
-						setImage(g, Index)
+						if err = setImage(g, Index); err != nil {
+							log.Fatal(err)
+							return err
+						}
 					case sdl.K_LEFT:
 						Index--
 						if Index < 0 {
 							Index = len(g.paths) - 1
 						}
-						setImage(g, Index)
+						if err = setImage(g, Index); err != nil {
+							log.Fatal(err)
+							return err
+						}
 					}
 				}
 			case *sdl.MouseMotionEvent:
@@ -183,12 +187,11 @@ func run(g *Game) (err error) {
 }
 
 func main() {
-	dir := " ../../assets"
-	if len(flag.Args()) > 0 {
-		dir = flag.Args()[0]
+	dir := "../../assets"
+	if len(os.Args) > 1 {
+		dir = os.Args[1]
 	}
 	g := NewGame(dir)
-	fmt.Println(g)
 	if err := run(g); err != nil {
 		os.Exit(1)
 	}
