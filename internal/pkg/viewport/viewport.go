@@ -27,7 +27,7 @@ const (
 	/** The display refresh rate period in milliseconds (1 / 60Hz ~= 16ms). 60 frames per second are fine for a video game, so they are more than enough for an image viewer. */
 	DISPLAY_REFRESH_RATE_PERIOD uint32 = 16
 	/** The maximum allowed zoom factor value. */
-	VIEWPORT_MAXIMUM_ZOOM_FACTOR int32 = 256
+	VIEWPORT_MAXIMUM_ZOOM_FACTOR int32 = 16
 	/** Window minimum width in pixels. */
 	VIEWPORT_MINIMUM_WINDOW_WIDTH int32 = 100
 	/** Window minimum height in pixels. */
@@ -57,6 +57,10 @@ var texture *sdl.Texture = nil
 /** The texture holding the image adapted to the current viewport dimensions. */
 var adapted_texture *sdl.Texture = nil
 
+func init() {
+	vp.flip_mode = sdl.FLIP_NONE
+}
+
 //-------------------------------------------------------------------------------------------------
 // Private functions
 //-------------------------------------------------------------------------------------------------
@@ -66,7 +70,7 @@ var adapted_texture *sdl.Texture = nil
  * @return 0 if the function succeeded,
  * @return -1 if an error occurred.
  */
-func AdaptImage(width int32, height int32) (err error) {
+func adaptImage(width int32, height int32) (err error) {
 	var Horizontal_Scaling_Percentage int32
 	var Vertical_Scaling_Percentage int32
 	var dstRect sdl.Rect
@@ -199,15 +203,7 @@ func SetDimensions(new_width int32, new_height int32) {
 	vp.height = new_height
 
 	// Add additional borders to the image to keep its ratio
-	AdaptImage(vp.original_width, vp.original_height)
-}
-
-//var SetZoomedArea func(int32, int32, int32)
-
-func init() {
-	vp.flip_mode = sdl.FLIP_NONE
-	//fmt.Println("Creating SetZoomedArea function...")
-	// SetZoomedArea = MakeSetZoomedArea()
+	adaptImage(vp.original_width, vp.original_height)
 }
 
 var Previous_Zoom_Level_Rectangle_X = int32(0)
@@ -275,7 +271,7 @@ func SetFlippingMode(mode TViewportFlippingModeID) {
 	}
 
 	// Redraw the image with the newly selected flipping mode
-	AdaptImage(vp.original_width, vp.original_height)
+	adaptImage(vp.original_width, vp.original_height)
 }
 
 func ScaleImage() {
@@ -312,6 +308,6 @@ func ScaleImage() {
 		vp.srcRect.Y = 0
 
 		// Fill the empty part of the image if its ratio is different from the viewport ratio
-		AdaptImage(vp.srcRect.W, vp.srcRect.H)
+		adaptImage(vp.srcRect.W, vp.srcRect.H)
 	}
 }
