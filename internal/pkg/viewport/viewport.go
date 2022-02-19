@@ -88,6 +88,7 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 	var Rectangle_Original_Image_Dimensions sdl.Rect
 
 	fmt.Println("AdaptImage(", Image_Width, ", ", Image_Height, ")")
+	fmt.Printf("Viewport(%d, %d)\n", Viewport_Width, Viewport_Height)
 	// Adjust image size to viewport ratio to make sure the image will keep its ratio
 	// Image is smaller than the viewport, keep viewport size
 	if (Image_Width < Viewport_Width) && (Image_Height < Viewport_Height) {
@@ -199,7 +200,7 @@ func Initialize(title string, image *sdl.Surface) (err error) {
 		log.Fatal(err)
 		return err
 	}
-	fmt.Printf("Initialize():  Image W=%d, H=%d", Viewport_Original_Image_Width, Viewport_Original_Image_Height)
+	fmt.Printf("Initialize():  Image W=%d, H=%d\n", Viewport_Original_Image_Width, Viewport_Original_Image_Height)
 
 	return nil
 }
@@ -235,7 +236,7 @@ func MakeSetZoomedArea() func(int32, int32, int32) {
 		var Rectangle_Y = int32(0)
 
 		// Do not compute viewing area once more if the maximum zooming level has been reached, because values would overflow
-		if (Previous_Zoom_Factor >= CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor >= CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
+		if (Previous_Zoom_Factor == CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor == CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
 			return
 		}
 

@@ -86,8 +86,9 @@ func run(g *Game) (err error) {
 
 			case *sdl.WindowEvent:
 				// Tell the viewport that its size
-				if event.GetType() == sdl.WINDOWEVENT_SIZE_CHANGED {
-					fmt.Printf("Window sis change to (%d, %d) %t\n", t.Data1, t.Data2, event.GetType() == sdl.WINDOWEVENT_SIZE_CHANGED)
+
+				if t.Event == sdl.WINDOWEVENT_SIZE_CHANGED {
+					fmt.Printf("Window size change to (%d, %d) %d %t\n", t.Data1, t.Data2, t.Event, t.Event == sdl.WINDOWEVENT_SIZE_CHANGED)
 					viewport.SetDimensions(t.Data1, t.Data2)
 					Zoom_Factor = 1 // Zoom has been reset when resizing the window
 				}
