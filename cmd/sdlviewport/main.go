@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -22,13 +23,15 @@ type Game struct {
 	seed  int64
 }
 
-func NewGame() *Game {
+func NewGame(dir string) *Game {
 	g := &Game{}
 	g.title = "SDL Image Viewer - "
 	g.seed = time.Now().Unix()
 	rand.Seed(g.seed)
-	g.root = "../../assets"
+	fmt.Println("Directory " + dir)
+	g.root = dir
 	g.paths = imagefs.AllJpgFiles(g.root)
+	fmt.Println("Paths ", g.paths)
 	return g
 }
 func setImage(g *Game, i int) (err error) {
@@ -180,7 +183,11 @@ func run(g *Game) (err error) {
 }
 
 func main() {
-	g := NewGame()
+	dir := " ../../assets"
+	if len(flag.Args()) > 0 {
+		dir = flag.Args()[0]
+	}
+	g := NewGame(dir)
 	fmt.Println(g)
 	if err := run(g); err != nil {
 		os.Exit(1)
