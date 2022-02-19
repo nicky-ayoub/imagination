@@ -144,8 +144,7 @@ func run(g *Game) (err error) {
 					}
 				}
 			default:
-				fmt.Printf("[%d ms] Unknown\ttype:%d\n",
-					t.GetTimestamp(), t.GetType())
+				//fmt.Printf("[%d ms] Unknown\ttype:%d\n", t.GetTimestamp(), t.GetType())
 			}
 		}
 		//fmt.Println("Drawing image")
