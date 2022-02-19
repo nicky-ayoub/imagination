@@ -129,8 +129,8 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 		log.Fatal(err)
 		return err
 	}
-	// Set a green background color
-	err = renderer.SetDrawColor(0, 192, 0, 0)
+	// Set a black background color
+	err = renderer.SetDrawColor(0, 0, 0, 0)
 	if err != nil {
 		log.Fatal(err)
 		return err
