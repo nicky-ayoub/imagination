@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Read image from file that already exists
-	existingImageFile, err := os.Open("test.jpg")
+	existingImageFile, err := os.Open("../../assets/test.jpg")
 	if err != nil {
 		// Handle error
 	}
@@ -34,6 +34,8 @@ func main() {
 	loadedImage, err := png.Decode(existingImageFile)
 	if err != nil {
 		// Handle error
+		panic(err)
+
 	}
 	fmt.Println(loadedImage)
 }

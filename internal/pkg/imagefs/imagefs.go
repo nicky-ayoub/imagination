@@ -7,14 +7,18 @@ import (
 	"path/filepath"
 )
 
-func CountGoFiles(folder string, count int) int {
+func CountGoFiles(folder string) (count int) {
+	return CountGoFilesByExt(folder, ".go")
+}
+
+func CountGoFilesByExt(folder string, ext string) (count int) {
 	files, err := os.ReadDir(folder)
 	fmt.Println("Scanning  folder " + folder)
 	if err != nil {
 		return 0
 	}
 	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".go" {
+		if filepath.Ext(f.Name()) == ext {
 			count++
 		}
 	}

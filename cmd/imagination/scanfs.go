@@ -21,8 +21,7 @@ func main() {
 	if len(flag.Args()) > 0 {
 		dir = flag.Args()[0]
 	}
-	fmt.Println("Scanning", dir)
-
+	fmt.Println(imagefs.CountGoFiles(dir))
 	fmt.Println(imagefs.CountAllGoFiles("/home/nicky/go"))
 	fmt.Println(imagefs.CountAllGoFiles(dir))
 	fmt.Println(imagefs.CountAllFilesByExt(dir, *extPtr))
@@ -31,16 +30,4 @@ func main() {
 		fmt.Println(file)
 	}
 	fmt.Println(imagefs.CountAllJpgFiles(dir))
-	// aPath := dir + "/**/*" + *extPtr
-
-	// fmt.Println("Print globbing", aPath)
-	// files, err := filepath.Glob(aPath)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// for _, file := range files {
-
-	// 	fmt.Println(file)
-	// }
 }
