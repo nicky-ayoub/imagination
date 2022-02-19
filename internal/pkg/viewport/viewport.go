@@ -26,13 +26,13 @@ const (
 //-------------------------------------------------------------------------------------------------
 const (
 	/** The display refresh rate period in milliseconds (1 / 60Hz ~= 16ms). 60 frames per second are fine for a video game, so they are more than enough for an image viewer. */
-	CONFIGURATION_DISPLAY_REFRESH_RATE_PERIOD uint32 = 16
+	DISPLAY_REFRESH_RATE_PERIOD uint32 = 16
 	/** The maximum allowed zoom factor value. */
-	CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR int32 = 256
+	VIEWPORT_MAXIMUM_ZOOM_FACTOR int32 = 256
 	/** Window minimum width in pixels. */
-	CONFIGURATION_VIEWPORT_MINIMUM_WINDOW_WIDTH int32 = 100
+	VIEWPORT_MINIMUM_WINDOW_WIDTH int32 = 100
 	/** Window minimum height in pixels. */
-	CONFIGURATION_VIEWPORT_MINIMUM_WINDOW_HEIGHT int32 = 100
+	VIEWPORT_MINIMUM_WINDOW_HEIGHT int32 = 100
 )
 
 var window *sdl.Window
@@ -124,27 +124,24 @@ func AdaptImage(Image_Width int32, Image_Height int32) (err error) {
 
 	// Fill the texture with a visible background color, so the original image dimensions are easily visible
 
-	err = renderer.SetRenderTarget(adapted_texture)
-	if err != nil {
+	if err = renderer.SetRenderTarget(adapted_texture); err != nil {
 		log.Fatal(err)
 		return err
 	}
 	// Set a black background color
-	err = renderer.SetDrawColor(0, 0, 0, 0)
-	if err != nil {
+	if err = renderer.SetDrawColor(0, 0, 0, 0); err != nil {
 		log.Fatal(err)
 		return err
 	}
 	// Do the fill operation
-	err = renderer.Clear()
-	if err != nil {
+	if err = renderer.Clear(); err != nil {
 		log.Fatal(err)
 		return err
 	}
 
 	// Copy the original image on the adjusted image
-	Rectangle_Original_Image_Dimensions.X = 0
-	Rectangle_Original_Image_Dimensions.Y = 0
+	Rectangle_Original_Image_Dimensions.X = renderer.GetViewport().W/2 - Image_Width/2
+	Rectangle_Original_Image_Dimensions.Y = renderer.GetViewport().H/2 - Image_Height/2
 	Rectangle_Original_Image_Dimensions.W = Image_Width - 1
 	Rectangle_Original_Image_Dimensions.H = Image_Height - 1
 
@@ -193,7 +190,7 @@ func Initialize(title string, image *sdl.Surface) (err error) {
 	}
 
 	// Do not allow the window to be too small because it can prevent the texture rendering from working
-	window.SetMinimumSize(CONFIGURATION_VIEWPORT_MINIMUM_WINDOW_WIDTH, CONFIGURATION_VIEWPORT_MINIMUM_WINDOW_HEIGHT)
+	window.SetMinimumSize(VIEWPORT_MINIMUM_WINDOW_WIDTH, VIEWPORT_MINIMUM_WINDOW_HEIGHT)
 
 	// Cache original image dimensions
 	Viewport_Original_Image_Pixel_Format, _, Viewport_Original_Image_Width, Viewport_Original_Image_Height, err = texture.Query()
@@ -237,7 +234,7 @@ func MakeSetZoomedArea() func(int32, int32, int32) {
 		var Rectangle_Y = int32(0)
 
 		// Do not compute viewing area once more if the maximum zooming level has been reached, because values would overflow
-		if (Previous_Zoom_Factor == CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor == CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
+		if (Previous_Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) && (Zoom_Factor == VIEWPORT_MAXIMUM_ZOOM_FACTOR) {
 			return
 		}
 

@@ -99,7 +99,7 @@ func run(g *Game) (err error) {
 			case *sdl.MouseWheelEvent:
 				// Wheel is rotated toward the user, increment the zoom factor
 				if t.Y > 0 {
-					if Zoom_Factor < viewport.CONFIGURATION_VIEWPORT_MAXIMUM_ZOOM_FACTOR {
+					if Zoom_Factor < viewport.VIEWPORT_MAXIMUM_ZOOM_FACTOR {
 						Zoom_Factor *= 2
 					}
 				} else { // Wheel is rotated away from the user, decrement the zoom factor
@@ -172,8 +172,8 @@ func run(g *Game) (err error) {
 
 		// Wait enough time to get a 60Hz refresh rate
 		Elapsed_Time = sdl.GetTicks() - Frame_Starting_Time
-		if Elapsed_Time < viewport.CONFIGURATION_DISPLAY_REFRESH_RATE_PERIOD {
-			sdl.Delay(viewport.CONFIGURATION_DISPLAY_REFRESH_RATE_PERIOD - Elapsed_Time)
+		if Elapsed_Time < viewport.DISPLAY_REFRESH_RATE_PERIOD {
+			sdl.Delay(viewport.DISPLAY_REFRESH_RATE_PERIOD - Elapsed_Time)
 		}
 	}
 	return
