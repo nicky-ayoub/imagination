@@ -22,13 +22,24 @@ type Game struct {
 	seed  int64
 }
 
+func shuffle(seed int64, src []string) []string {
+	final := make([]string, len(src))
+	rand.Seed(seed)
+	perm := rand.Perm(len(src))
+
+	for i, v := range perm {
+		final[v] = src[i]
+	}
+	return final
+}
+
 func NewGame(dir string) *Game {
 	g := &Game{}
 	g.title = "SDL Image Viewer - "
-	g.seed = time.Now().Unix()
-	rand.Seed(g.seed)
+	g.seed = time.Now().UTC().UnixNano()
 	g.root = dir
-	g.paths = imagefs.AllJpgFiles(g.root)
+	g.paths = shuffle(g.seed, imagefs.AllJpgFiles(g.root))
+
 	return g
 }
 func setImage(g *Game, i int) (err error) {
@@ -157,6 +168,18 @@ func run(g *Game) (err error) {
 							log.Fatal(err)
 							return err
 						}
+					case sdl.K_UP:
+						if Zoom_Factor < viewport.VIEWPORT_MAXIMUM_ZOOM_FACTOR {
+							Zoom_Factor *= 2
+						}
+						Mouse_X, Mouse_Y = viewport.ScreenCenter()
+						viewport.SetZoomedArea(Mouse_X, Mouse_Y, Zoom_Factor)
+					case sdl.K_DOWN:
+						if Zoom_Factor > 1 {
+							Zoom_Factor /= 2
+						}
+						Mouse_X, Mouse_Y = viewport.ScreenCenter()
+						viewport.SetZoomedArea(Mouse_X, Mouse_Y, Zoom_Factor)
 					}
 				}
 			case *sdl.MouseMotionEvent:

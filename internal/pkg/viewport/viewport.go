@@ -153,6 +153,13 @@ func adaptImage(width int32, height int32) (err error) {
 //-------------------------------------------------------------------------------------------------
 // Public functions
 //-------------------------------------------------------------------------------------------------
+
+func ScreenCenter() (X int32, Y int32) {
+	X = renderer.GetViewport().W / 2
+	Y = renderer.GetViewport().H / 2
+	return
+}
+
 func Initialize(title string, image *sdl.Surface) (err error) {
 	// Try to create the viewport window
 	if window == nil {
@@ -193,7 +200,7 @@ func Initialize(title string, image *sdl.Surface) (err error) {
 }
 
 func DrawImage() {
-	renderer.CopyEx(adapted_texture, &vp.srcRect, nil, 0, nil, 0)
+	renderer.Copy(adapted_texture, &vp.srcRect, nil)
 	renderer.Present()
 }
 
