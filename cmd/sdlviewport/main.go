@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -22,23 +23,16 @@ type Game struct {
 	seed  int64
 }
 
-func shuffle(seed int64, src []string) []string {
-	final := make([]string, len(src))
-	rand.Seed(seed)
-	perm := rand.Perm(len(src))
-
-	for i, v := range perm {
-		final[v] = src[i]
-	}
-	return final
-}
-
-func NewGame(dir string) *Game {
+func NewGame(dir string, randomize bool) *Game {
 	g := &Game{}
 	g.title = "SDL Image Viewer - "
 	g.seed = time.Now().UTC().UnixNano()
 	g.root = dir
-	g.paths = shuffle(g.seed, imagefs.AllJpgFiles(g.root))
+	g.paths = imagefs.AllJpgFiles(g.root)
+	if randomize {
+		rand.Seed(g.seed)
+		rand.Shuffle(len(g.paths), func(i, j int) { g.paths[i], g.paths[j] = g.paths[j], g.paths[i] })
+	}
 
 	return g
 }
@@ -210,11 +204,24 @@ func run(g *Game) (err error) {
 }
 
 func main() {
-	dir := "../../assets"
-	if len(os.Args) > 1 {
-		dir = os.Args[1]
+	const usage = `Usage of viewport:
+-r, --randomize mize the file list
+-h, --help prints help information 
+`
+	dir := "."
+	var randomize bool
+	flag.BoolVar(&randomize, "randomize", false, "Randomize the file list")
+	flag.BoolVar(&randomize, "r", false, "Randomize the file list")
+	flag.Usage = func() { fmt.Print(usage) }
+	flag.Parse()
+	if randomize {
+		fmt.Println("randomize is on")
 	}
-	g := NewGame(dir)
+	fmt.Println(flag.Args())
+	if len(flag.Args()) > 0 {
+		dir = flag.Args()[0]
+	}
+	g := NewGame(dir, randomize)
 	if err := run(g); err != nil {
 		os.Exit(1)
 	}
